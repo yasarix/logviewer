@@ -134,52 +134,47 @@ public partial class MainWindow: Gtk.Window
 			"Cancel", ResponseType.Cancel,
 			"Open", ResponseType.Accept );
 
-		if (chooser.Run() == (int) ResponseType.Accept)
-		{
+		if (chooser.Run () == (int)ResponseType.Accept) {
 			try {
 				file_load_thread.Abort ();
-			}
-			catch {
+			} catch {
 			}
 
 			// Open the file for reading.
-			this.log_file_name = chooser.Filename.ToString();
+			this.log_file_name = chooser.Filename.ToString ();
 
 			// Set the MainWindow Title to the filename.
 			this.Title = "Log Viewer - " + log_file_name;
 
-			chooser.Destroy();
+			chooser.Destroy ();
 
-			MainWindowStatusBar.Push(1, "Loading file contents...");
+			MainWindowStatusBar.Push (1, "Loading file contents...");
 
-			file_load_thread = new Thread(() => {
+			file_load_thread = new Thread (() => {
 				System.IO.StreamReader file = new System.IO.StreamReader (this.log_file_name);
 
 				int i = 0;
-				while((file_line = file.ReadLine()) != null)
-				{
-					log_line = this.parseLogLine(file_line);
+				while ((file_line = file.ReadLine ()) != null) {
+					log_line = this.parseLogLine (file_line);
 
 					Gtk.Application.Invoke (delegate {
-						Gdk.Threads.Enter();
+						Gdk.Threads.Enter ();
 
 						try {
 							LogStore.AppendValues (log_line);
-						}
-						finally {
-							Gdk.Threads.Leave();
+						} finally {
+							Gdk.Threads.Leave ();
 						}
 					});
 
 					if (i % 1000 == 0) {
-						Gtk.Application.Invoke(delegate {
-							Gdk.Threads.Enter();
+						Gtk.Application.Invoke (delegate {
+							Gdk.Threads.Enter ();
 
 							try {
-								progressbar1.Pulse();
-							}
-							finally {
-								Gdk.Threads.Leave();
+								progressbar1.Pulse ();
+							} finally {
+								Gdk.Threads.Leave ();
 							}
 						});
 						
@@ -189,13 +184,12 @@ public partial class MainWindow: Gtk.Window
 				}
 
 				Gtk.Application.Invoke (delegate {
-					Gdk.Threads.Enter();
+					Gdk.Threads.Enter ();
 					try {
 						MainWindowStatusBar.Push (1, "File loaded.");
 						progressbar1.Fraction = 0;
-					}
-					finally {
-						Gdk.Threads.Leave();
+					} finally {
+						Gdk.Threads.Leave ();
 					}
 				});
 
@@ -203,7 +197,9 @@ public partial class MainWindow: Gtk.Window
 			});
 
 			file_load_thread.Start ();
-		} // end if
+		} else {
+			chooser.Destroy ();
+		}
 	}
 
 	public LogLine parseLogLine(string str)
