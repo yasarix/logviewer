@@ -21,8 +21,9 @@ public partial class MainWindow
 	private global::Gtk.HBox FilterPanel;
 	private global::Gtk.Label MessageFilterLabel;
 	private global::Gtk.Entry MessageFilterCriteria;
-	private global::Gtk.Alignment alignment1;
 	private global::Gtk.Button SearchButton;
+	private global::Gtk.Alignment alignment1;
+	private global::Gtk.Button FilterClearButton;
 	private global::Gtk.VPaned LogPanel;
 	private global::Gtk.ScrolledWindow LogLinesWindow;
 	private global::Gtk.TreeView MainTable;
@@ -129,27 +130,40 @@ public partial class MainWindow
 		global::Gtk.Box.BoxChild w6 = ((global::Gtk.Box.BoxChild)(this.FilterPanel [this.MessageFilterCriteria]));
 		w6.Position = 1;
 		// Container child FilterPanel.Gtk.Box+BoxChild
-		this.alignment1 = new global::Gtk.Alignment (0.5F, 0.5F, 1F, 1F);
-		this.alignment1.Name = "alignment1";
-		this.alignment1.RightPadding = ((uint)(100));
-		// Container child alignment1.Gtk.Container+ContainerChild
 		this.SearchButton = new global::Gtk.Button ();
+		this.SearchButton.CanDefault = true;
 		this.SearchButton.CanFocus = true;
 		this.SearchButton.Name = "SearchButton";
+		this.SearchButton.UseStock = true;
 		this.SearchButton.UseUnderline = true;
-		this.SearchButton.Label = global::Mono.Unix.Catalog.GetString ("Search");
-		this.alignment1.Add (this.SearchButton);
+		this.SearchButton.Label = "gtk-find";
+		this.FilterPanel.Add (this.SearchButton);
+		global::Gtk.Box.BoxChild w7 = ((global::Gtk.Box.BoxChild)(this.FilterPanel [this.SearchButton]));
+		w7.Position = 2;
+		w7.Expand = false;
+		w7.Fill = false;
+		// Container child FilterPanel.Gtk.Box+BoxChild
+		this.alignment1 = new global::Gtk.Alignment (0.5F, 0.5F, 1F, 1F);
+		this.alignment1.Name = "alignment1";
+		this.alignment1.RightPadding = ((uint)(5));
+		// Container child alignment1.Gtk.Container+ContainerChild
+		this.FilterClearButton = new global::Gtk.Button ();
+		this.FilterClearButton.CanFocus = true;
+		this.FilterClearButton.Name = "FilterClearButton";
+		this.FilterClearButton.UseStock = true;
+		this.FilterClearButton.UseUnderline = true;
+		this.FilterClearButton.Label = "gtk-clear";
+		this.alignment1.Add (this.FilterClearButton);
 		this.FilterPanel.Add (this.alignment1);
-		global::Gtk.Box.BoxChild w8 = ((global::Gtk.Box.BoxChild)(this.FilterPanel [this.alignment1]));
-		w8.PackType = ((global::Gtk.PackType)(1));
-		w8.Position = 2;
-		w8.Expand = false;
-		w8.Fill = false;
-		this.MainBox.Add (this.FilterPanel);
-		global::Gtk.Box.BoxChild w9 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.FilterPanel]));
+		global::Gtk.Box.BoxChild w9 = ((global::Gtk.Box.BoxChild)(this.FilterPanel [this.alignment1]));
 		w9.Position = 3;
 		w9.Expand = false;
 		w9.Fill = false;
+		this.MainBox.Add (this.FilterPanel);
+		global::Gtk.Box.BoxChild w10 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.FilterPanel]));
+		w10.Position = 3;
+		w10.Expand = false;
+		w10.Fill = false;
 		// Container child MainBox.Gtk.Box+BoxChild
 		this.LogPanel = new global::Gtk.VPaned ();
 		this.LogPanel.CanFocus = true;
@@ -168,8 +182,8 @@ public partial class MainWindow
 		this.MainTable.EnableSearch = false;
 		this.LogLinesWindow.Add (this.MainTable);
 		this.LogPanel.Add (this.LogLinesWindow);
-		global::Gtk.Paned.PanedChild w11 = ((global::Gtk.Paned.PanedChild)(this.LogPanel [this.LogLinesWindow]));
-		w11.Resize = false;
+		global::Gtk.Paned.PanedChild w12 = ((global::Gtk.Paned.PanedChild)(this.LogPanel [this.LogLinesWindow]));
+		w12.Resize = false;
 		// Container child LogPanel.Gtk.Paned+PanedChild
 		this.LogDetailsWindow = new global::Gtk.ScrolledWindow ();
 		this.LogDetailsWindow.Name = "LogDetailsWindow";
@@ -185,8 +199,8 @@ public partial class MainWindow
 		this.LogDetailsWindow.Add (this.LogDetailsTextView);
 		this.LogPanel.Add (this.LogDetailsWindow);
 		this.MainBox.Add (this.LogPanel);
-		global::Gtk.Box.BoxChild w14 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.LogPanel]));
-		w14.Position = 4;
+		global::Gtk.Box.BoxChild w15 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.LogPanel]));
+		w15.Position = 4;
 		// Container child MainBox.Gtk.Box+BoxChild
 		this.MainWindowStatusBar = new global::Gtk.Statusbar ();
 		this.MainWindowStatusBar.Name = "MainWindowStatusBar";
@@ -195,13 +209,13 @@ public partial class MainWindow
 		this.MainProgressBar = new global::Gtk.ProgressBar ();
 		this.MainProgressBar.Name = "MainProgressBar";
 		this.MainWindowStatusBar.Add (this.MainProgressBar);
-		global::Gtk.Box.BoxChild w15 = ((global::Gtk.Box.BoxChild)(this.MainWindowStatusBar [this.MainProgressBar]));
-		w15.Position = 1;
+		global::Gtk.Box.BoxChild w16 = ((global::Gtk.Box.BoxChild)(this.MainWindowStatusBar [this.MainProgressBar]));
+		w16.Position = 1;
 		this.MainBox.Add (this.MainWindowStatusBar);
-		global::Gtk.Box.BoxChild w16 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.MainWindowStatusBar]));
-		w16.Position = 5;
-		w16.Expand = false;
-		w16.Fill = false;
+		global::Gtk.Box.BoxChild w17 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.MainWindowStatusBar]));
+		w17.Position = 5;
+		w17.Expand = false;
+		w17.Fill = false;
 		this.Add (this.MainBox);
 		if ((this.Child != null)) {
 			this.Child.ShowAll ();
@@ -215,7 +229,8 @@ public partial class MainWindow
 		this.preferencesAction.Activated += new global::System.EventHandler (this.OnPreferencesClicked);
 		this.findAction.Toggled += new global::System.EventHandler (this.onFilterToggled);
 		this.preferencesAction1.Activated += new global::System.EventHandler (this.OnPreferencesClicked);
-		this.SearchButton.Clicked += new global::System.EventHandler (this.OnMessageFilterEntered);
+		this.SearchButton.Clicked += new global::System.EventHandler (this.OnSearchClicked);
+		this.FilterClearButton.Clicked += new global::System.EventHandler (this.OnFilterClearClicked);
 		this.MainTable.CursorChanged += new global::System.EventHandler (this.onRowSelect);
 	}
 }

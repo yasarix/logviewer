@@ -12,8 +12,10 @@ public partial class MainWindow: Gtk.Window
 
 	Gtk.ListStore LogStore;
 	Gtk.ListStore EmptyLogStore;
+
 	string[] FileContent = new string[]{ };
 	Thread FileLoadThread;
+	Thread SearchThread;
 
 	public MainWindow () : base (Gtk.WindowType.Toplevel)
 	{
@@ -21,11 +23,153 @@ public partial class MainWindow: Gtk.Window
 		initUi ();
 	}
 
+	// Events
+	//----------------------------------------------------------------------------------
 	protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 	{
 		onExit (sender, a);
 	}
 
+	protected void onExit (object sender, EventArgs e)
+	{
+		// Try to stop threads if there is any running
+		stopThreads();
+		Application.Quit ();
+	}
+
+	protected void onFilterToggled (object sender, EventArgs e)
+	{
+		if (FilterPanel.Visible) {
+			MessageFilterCriteria.Text = "";
+			FilterPanel.Visible = false;
+			OnSearchClicked (sender, e);
+		} else {
+			FilterPanel.Visible = true;
+			MessageFilterCriteria.GrabFocus ();
+		}
+	}
+	protected void onRowSelect(object sender, EventArgs e)
+	{
+		TreeSelection selection = (sender as TreeView).Selection;
+		TreeModel model;
+		TreeIter iter;
+		LogLine line = new LogLine();
+
+		// THE ITER WILL POINT TO THE SELECTED ROW
+		if (selection.GetSelected(out model, out iter)) {
+			line = (LogLine) model.GetValue (iter, 0);
+		}
+
+		showLogDetails (line);
+	}
+
+	protected void OnFilterClearClicked (object sender, EventArgs e)
+	{
+		bool file_tread_status = true;
+
+		try {
+			if (FileLoadThread.ThreadState != ThreadState.Running) {
+				file_tread_status = false;
+			}
+		}
+		catch {
+			file_tread_status = false;
+		}
+
+		if (!file_tread_status) {
+			Gtk.Application.Invoke (delegate {
+				Gdk.Threads.Enter ();
+
+				try {
+					MessageFilterCriteria.Text = "";
+					MainTable.Model = LogStore;
+					MainWindowStatusBar.Push (1, "");
+				} finally {
+					Gdk.Threads.Leave ();
+				}
+			});
+		}
+	}
+
+	protected void OnSearchClicked (object sender, EventArgs e)
+	{
+		Gtk.ListStore filtered_store;
+
+		disableControls ();
+
+		if (MessageFilterCriteria.Text == "") {
+			MainTable.Model = LogStore;
+			MainWindowStatusBar.Push (1, "");
+		} else {
+			// Prepare a criteria object
+			LogLine needle = new LogLine ("", "", "", MessageFilterCriteria.Text);
+			MainWindowStatusBar.Push (1, "Searching...");
+
+			SearchThread = new Thread (() => {
+				filtered_store = searchLogEntries (needle, LogStore);
+
+				Gtk.Application.Invoke (delegate {
+					Gdk.Threads.Enter();
+					try {
+						MainTable.Model = filtered_store;
+						MainWindowStatusBar.Push (1, "Search completed.");
+
+						enableControls();
+					}
+					finally {
+						Gdk.Threads.Leave();
+					}
+				});
+			});
+
+			SearchThread.Start ();
+		}
+	}
+
+	protected void OnPreferencesClicked(object sender, EventArgs e)
+	{}
+
+	protected void onFileOpen (object sender, EventArgs e)
+	{
+		FileChooserDialog chooser = new FileChooserDialog(
+			"Select a logfile to view ...",
+			this,
+			FileChooserAction.Open,
+			"Cancel", ResponseType.Cancel,
+			"Open", ResponseType.Accept );
+
+		if (chooser.Run () == (int)ResponseType.Accept) {
+			try {
+				if (FileLoadThread.ThreadState == ThreadState.Running) {
+					FileLoadThread.Abort ();
+				}
+			}
+			catch{
+			}
+
+			// Open the file for reading.
+			string file_name = chooser.Filename.ToString ();
+
+			// Set the MainWindow Title to the filename.
+			addFilenameToTitle (file_name);
+
+			chooser.Destroy ();
+
+			// Reset the interface to load new file
+			resetUi ();
+
+			MainWindowStatusBar.Push (1, "Loading file contents...");
+
+			// Load file in a thread
+			FileLoadThread = new Thread (() => {loadFile (file_name);});
+			FileLoadThread.Start ();
+
+		} else {
+			chooser.Destroy ();
+		}
+	}
+
+	// Ui methods
 	protected void resetUi()
 	{
 		MainTable.Model = EmptyLogStore;
@@ -112,64 +256,10 @@ public partial class MainWindow: Gtk.Window
 		(cell as Gtk.CellRendererText).Text = line.Level;
 	}
 
-	private void onRowSelect(object sender, EventArgs e)
-	{
-		TreeSelection selection = (sender as TreeView).Selection;
-		TreeModel model;
-		TreeIter iter;
-		LogLine line = new LogLine();
-
-		// THE ITER WILL POINT TO THE SELECTED ROW
-		if (selection.GetSelected(out model, out iter)) {
-			line = (LogLine) model.GetValue (iter, 0);
-		}
-
-		showLogDetails (line);
-	}
-
 	public void showLogDetails(LogLine logline)
 	{
 		LogDetailsTextView.Buffer.Clear ();
 		LogDetailsTextView.Buffer.Text = logline.Message;
-	}
-
-	protected void onFileOpen (object sender, EventArgs e)
-	{
-		FileChooserDialog chooser = new FileChooserDialog(
-			"Select a logfile to view ...",
-			this,
-			FileChooserAction.Open,
-			"Cancel", ResponseType.Cancel,
-			"Open", ResponseType.Accept );
-
-		if (chooser.Run () == (int)ResponseType.Accept) {
-			try {
-				FileLoadThread.Abort ();
-			}
-			catch {
-				// I see the problem, and I plan to do nothing about it
-			}
-
-			// Open the file for reading.
-			string file_name = chooser.Filename.ToString ();
-
-			// Set the MainWindow Title to the filename.
-			addFilenameToTitle (file_name);
-
-			chooser.Destroy ();
-
-			// Reset the interface to load new file
-			resetUi ();
-
-			MainWindowStatusBar.Push (1, "Loading file contents...");
-
-			// Load file in a thread
-			FileLoadThread = new Thread (() => {loadFile (file_name);});
-			FileLoadThread.Start ();
-
-		} else {
-			chooser.Destroy ();
-		}
 	}
 
 	public void addFilenameToTitle(string file_name) {
@@ -178,6 +268,15 @@ public partial class MainWindow: Gtk.Window
 
 	public void loadFile(string file_name)
 	{
+		Gtk.Application.Invoke (delegate {
+			Gdk.Threads.Enter ();
+			try {
+				disableControls ();
+			} finally {
+				Gdk.Threads.Leave ();
+			}
+		});
+
 		LogLine log_line = new LogLine ();
 
 		FileContent = System.IO.File.ReadAllLines (file_name);
@@ -213,8 +312,10 @@ public partial class MainWindow: Gtk.Window
 		Gtk.Application.Invoke (delegate {
 			Gdk.Threads.Enter ();
 			try {
+				enableControls();
 				MainTable.Model = LogStore;
 				MainWindowStatusBar.Push (1, "File loaded.");
+				MainProgressBar.Fraction = 0;
 			} finally {
 				Gdk.Threads.Leave ();
 			}
@@ -247,45 +348,50 @@ public partial class MainWindow: Gtk.Window
 		return "white";
 	}
 
-	protected void onExit (object sender, EventArgs e)
+	protected Gtk.ListStore searchLogEntries(LogLine needle, Gtk.ListStore haystack)
 	{
-		try {
-			FileLoadThread.Abort();
-		}
-		catch {
-		}
+		Gtk.ListStore FilteredStore = new Gtk.ListStore (typeof(LogLine));
+		LogLine log_line;
 
-		Application.Quit ();
-	}
+		haystack.Foreach(new TreeModelForeachFunc((TreeModel model, TreePath path, TreeIter iter) => {
+			log_line = (LogLine) model.GetValue(iter, 0);
 
-	protected void onFilterToggled (object sender, EventArgs e)
-	{
-		if (FilterPanel.Visible) {
-			MessageFilterCriteria.Text = "";
-			FilterPanel.Visible = false;
-		} else {
-			FilterPanel.Visible = true;
-			MessageFilterCriteria.GrabFocus ();
-		}
-	}
+			if (log_line.Message.IndexOf (needle.Message, StringComparison.CurrentCultureIgnoreCase) > -1) {
+				FilteredStore.AppendValues (log_line);
+			}
 
-	private bool filterLogEntries (Gtk.TreeModel model, Gtk.TreeIter iter)
-	{
-		LogLine line = (LogLine) model.GetValue (iter, 0);
-
-		if (MessageFilterCriteria.Text == "")
-			return true;
-
-		if (line.Message.IndexOf(MessageFilterCriteria.Text, StringComparison.CurrentCultureIgnoreCase) > -1)
-			return true;
-		else
 			return false;
+		}));
+
+		return FilteredStore;
 	}
 
-	protected void OnMessageFilterEntered (object sender, EventArgs e)
-	{
+	public void stopThreads() {
+		try {
+			if (FileLoadThread.ThreadState == ThreadState.Running) {
+				FileLoadThread.Abort ();
+			}
+		}
+		catch{}
+
+		try {
+			if (SearchThread.ThreadState == ThreadState.Running) {
+				SearchThread.Abort ();
+			}
+		}
+		catch{}
 	}
 
-	protected void OnPreferencesClicked(object sender, EventArgs e)
-	{}
+	public void disableControls() {
+		// Disable "find" and "clear" buttons
+		SearchButton.Sensitive = false;
+		FilterClearButton.Sensitive = false;
+	}
+
+	public void enableControls() {
+		// Enable "find" and "clear" buttons
+		SearchButton.Sensitive = true;
+		FilterClearButton.Sensitive = true;
+	}
+
 }
