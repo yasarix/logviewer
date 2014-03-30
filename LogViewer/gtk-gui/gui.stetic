@@ -250,7 +250,7 @@
             <property name="MemberName" />
             <property name="Spacing">6</property>
             <child>
-              <widget class="Gtk.ProgressBar" id="progressbar1">
+              <widget class="Gtk.ProgressBar" id="MainProgressBar">
                 <property name="MemberName" />
               </widget>
               <packing>

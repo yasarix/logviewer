@@ -29,7 +29,7 @@ public partial class MainWindow
 	private global::Gtk.ScrolledWindow LogDetailsWindow;
 	private global::Gtk.TextView LogDetailsTextView;
 	private global::Gtk.Statusbar MainWindowStatusBar;
-	private global::Gtk.ProgressBar progressbar1;
+	private global::Gtk.ProgressBar MainProgressBar;
 
 	protected virtual void Build ()
 	{
@@ -192,10 +192,10 @@ public partial class MainWindow
 		this.MainWindowStatusBar.Name = "MainWindowStatusBar";
 		this.MainWindowStatusBar.Spacing = 6;
 		// Container child MainWindowStatusBar.Gtk.Box+BoxChild
-		this.progressbar1 = new global::Gtk.ProgressBar ();
-		this.progressbar1.Name = "progressbar1";
-		this.MainWindowStatusBar.Add (this.progressbar1);
-		global::Gtk.Box.BoxChild w15 = ((global::Gtk.Box.BoxChild)(this.MainWindowStatusBar [this.progressbar1]));
+		this.MainProgressBar = new global::Gtk.ProgressBar ();
+		this.MainProgressBar.Name = "MainProgressBar";
+		this.MainWindowStatusBar.Add (this.MainProgressBar);
+		global::Gtk.Box.BoxChild w15 = ((global::Gtk.Box.BoxChild)(this.MainWindowStatusBar [this.MainProgressBar]));
 		w15.Position = 1;
 		this.MainBox.Add (this.MainWindowStatusBar);
 		global::Gtk.Box.BoxChild w16 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.MainWindowStatusBar]));

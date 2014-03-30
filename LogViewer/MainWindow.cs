@@ -8,10 +8,12 @@ using System.Threading;
 
 public partial class MainWindow: Gtk.Window
 {
+	string WindowTitle = "LogViewer";
+
 	Gtk.ListStore LogStore;
 	Gtk.ListStore EmptyLogStore;
-	string log_file_name = null;
-	Thread file_load_thread;
+	string[] FileContent = new string[]{ };
+	Thread FileLoadThread;
 
 	public MainWindow () : base (Gtk.WindowType.Toplevel)
 	{
@@ -21,8 +23,16 @@ public partial class MainWindow: Gtk.Window
 
 	protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 	{
-		Application.Quit ();
-		a.RetVal = true;
+		onExit (sender, a);
+	}
+
+	protected void resetUi()
+	{
+		MainTable.Model = EmptyLogStore;
+		LogDetailsTextView.Buffer.Text = "";
+		MessageFilterCriteria.Text = "";
+		LogStore = new Gtk.ListStore (typeof(LogLine));
+		MainProgressBar.Fraction = 0;
 	}
 
 	protected void initUi()
@@ -125,9 +135,6 @@ public partial class MainWindow: Gtk.Window
 
 	protected void onFileOpen (object sender, EventArgs e)
 	{
-		LogLine log_line = new LogLine ();
-		string[] file_content = new string[]{ };
-
 		FileChooserDialog chooser = new FileChooserDialog(
 			"Select a logfile to view ...",
 			this,
@@ -137,76 +144,81 @@ public partial class MainWindow: Gtk.Window
 
 		if (chooser.Run () == (int)ResponseType.Accept) {
 			try {
-				file_load_thread.Abort ();
+				FileLoadThread.Abort ();
 			}
 			catch {
 				// I see the problem, and I plan to do nothing about it
 			}
 
-			MainTable.Model = EmptyLogStore;
-			LogStore = new Gtk.ListStore (typeof(LogLine));
-
 			// Open the file for reading.
-			this.log_file_name = chooser.Filename.ToString ();
+			string file_name = chooser.Filename.ToString ();
 
 			// Set the MainWindow Title to the filename.
-			this.Title = "Log Viewer - " + log_file_name;
+			addFilenameToTitle (file_name);
 
 			chooser.Destroy ();
 
+			// Reset the interface to load new file
+			resetUi ();
+
 			MainWindowStatusBar.Push (1, "Loading file contents...");
 
-			file_load_thread = new Thread (() => {
-				file_content = System.IO.File.ReadAllLines(this.log_file_name);
-
-				double progress_step = file_content.Length / 100;
-				int i = 0;
-				double current_progress = 0;
-				foreach (string file_line in file_content) {
-					log_line = this.parseLogLine (file_line);
-					LogStore.AppendValues (log_line);
-
-					if (i % progress_step == 0) {
-						Gtk.Application.Invoke(delegate {
-							Gdk.Threads.Enter();
-
-							try {
-								current_progress = progressbar1.Fraction;
-								current_progress+= 0.01;
-								if (current_progress > 1.0) {
-									current_progress = 1.0;
-								}
-
-								progressbar1.Fraction = current_progress;
-							}
-							finally {
-								Gdk.Threads.Leave();
-							}
-						});
-					}
-
-					i++;
-				}
-
-				MessageFilterCriteria.Text = "";
-
-				Gtk.Application.Invoke(delegate {
-					Gdk.Threads.Enter ();
-					try {
-						MainTable.Model = LogStore;
-						MainWindowStatusBar.Push (1, "File loaded.");
-						progressbar1.Fraction = 0;
-					} finally {
-						Gdk.Threads.Leave ();
-					}
-				});
-			});
-
-			file_load_thread.Start ();
+			// Load file in a thread
+			FileLoadThread = new Thread (() => {loadFile (file_name);});
+			FileLoadThread.Start ();
 
 		} else {
 			chooser.Destroy ();
 		}
+	}
+
+	public void addFilenameToTitle(string file_name) {
+		this.Title = this.WindowTitle + " - " + file_name;
+	}
+
+	public void loadFile(string file_name)
+	{
+		LogLine log_line = new LogLine ();
+
+		FileContent = System.IO.File.ReadAllLines (file_name);
+
+		double progress_step = FileContent.Length / 100;
+		int i = 0;
+		double current_progress = 0;
+		foreach (string file_line in FileContent) {
+			log_line = this.parseLogLine (file_line);
+			LogStore.AppendValues (log_line);
+
+			if (i % progress_step == 0) {
+				Gtk.Application.Invoke (delegate {
+					Gdk.Threads.Enter ();
+
+					try {
+						current_progress = MainProgressBar.Fraction;
+						current_progress += 0.01;
+						if (current_progress > 1.0) {
+							current_progress = 1.0;
+						}
+
+						MainProgressBar.Fraction = current_progress;
+					} finally {
+						Gdk.Threads.Leave ();
+					}
+				});
+			}
+
+			i++;
+		}
+
+		Gtk.Application.Invoke (delegate {
+			Gdk.Threads.Enter ();
+			try {
+				MainTable.Model = LogStore;
+				MainWindowStatusBar.Push (1, "File loaded.");
+			} finally {
+				Gdk.Threads.Leave ();
+			}
+		});
 	}
 
 	public LogLine parseLogLine(string str)
@@ -238,11 +250,12 @@ public partial class MainWindow: Gtk.Window
 	protected void onExit (object sender, EventArgs e)
 	{
 		try {
-			file_load_thread.Abort();
+			FileLoadThread.Abort();
 		}
-		finally {
-			Application.Quit ();
+		catch {
 		}
+
+		Application.Quit ();
 	}
 
 	protected void onFilterToggled (object sender, EventArgs e)
