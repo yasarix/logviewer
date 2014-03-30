@@ -141,7 +141,7 @@
             <property name="Visible">False</property>
             <property name="Spacing">6</property>
             <child>
-              <widget class="Gtk.Label" id="MessageFilterLable">
+              <widget class="Gtk.Label" id="MessageFilterLabel">
                 <property name="MemberName" />
                 <property name="Xpad">5</property>
                 <property name="LabelProp" translatable="yes">Search Message</property>
@@ -159,7 +159,6 @@
                 <property name="CanFocus">True</property>
                 <property name="IsEditable">True</property>
                 <property name="InvisibleChar">●</property>
-                <signal name="Changed" handler="OnMessageFilterChanged" />
               </widget>
               <packing>
                 <property name="Position">1</property>
@@ -171,13 +170,22 @@
                 <property name="MemberName" />
                 <property name="RightPadding">100</property>
                 <child>
-                  <placeholder />
+                  <widget class="Gtk.Button" id="SearchButton">
+                    <property name="MemberName" />
+                    <property name="CanFocus">True</property>
+                    <property name="Type">TextOnly</property>
+                    <property name="Label" translatable="yes">Search</property>
+                    <property name="UseUnderline">True</property>
+                    <signal name="Clicked" handler="OnMessageFilterEntered" after="yes" />
+                  </widget>
                 </child>
               </widget>
               <packing>
                 <property name="PackType">End</property>
                 <property name="Position">2</property>
                 <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
               </packing>
             </child>
           </widget>
@@ -187,9 +195,6 @@
             <property name="Expand">False</property>
             <property name="Fill">False</property>
           </packing>
-        </child>
-        <child>
-          <placeholder />
         </child>
         <child>
           <widget class="Gtk.VPaned" id="LogPanel">
@@ -236,7 +241,7 @@
             </child>
           </widget>
           <packing>
-            <property name="Position">5</property>
+            <property name="Position">4</property>
             <property name="AutoSize">False</property>
           </packing>
         </child>
@@ -258,7 +263,7 @@
             </child>
           </widget>
           <packing>
-            <property name="Position">6</property>
+            <property name="Position">5</property>
             <property name="AutoSize">True</property>
             <property name="Expand">False</property>
             <property name="Fill">False</property>

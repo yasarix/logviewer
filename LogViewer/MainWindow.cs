@@ -9,7 +9,7 @@ using System.Threading;
 public partial class MainWindow: Gtk.Window
 {
 	Gtk.ListStore LogStore;
-	Gtk.TreeModelFilter LogFilter;
+	Gtk.ListStore EmptyLogStore;
 	string log_file_name = null;
 	Thread file_load_thread;
 
@@ -27,6 +27,9 @@ public partial class MainWindow: Gtk.Window
 
 	protected void initUi()
 	{
+		// This is needed when model of MainTable changed
+		MainTable.RedrawOnAllocate = true;
+
 		Gtk.TreeViewColumn timestamp_column = new Gtk.TreeViewColumn ();
 		timestamp_column.Title = "Timestamp";
 		Gtk.CellRendererText timestamp_cell = new Gtk.CellRendererText ();
@@ -56,16 +59,14 @@ public partial class MainWindow: Gtk.Window
 		MainTable.AppendColumn (message_column);
 
 		LogStore = new Gtk.ListStore (typeof (LogLine));
+		EmptyLogStore = new Gtk.ListStore (typeof (LogLine));
+
+		MainTable.Model = EmptyLogStore;
 
 		timestamp_column.SetCellDataFunc (timestamp_cell, new Gtk.TreeCellDataFunc (renderTimestamp));
 		process_column.SetCellDataFunc (process_cell, new Gtk.TreeCellDataFunc (renderProcess));
 		LevelColumn.SetCellDataFunc (level_cell, new Gtk.TreeCellDataFunc (renderLevel));
 		message_column.SetCellDataFunc (message_cell, new Gtk.TreeCellDataFunc (renderMessage));
-
-		LogFilter = new Gtk.TreeModelFilter (LogStore, null);
-		LogFilter.VisibleFunc = new Gtk.TreeModelFilterVisibleFunc (filterLogEntries);
-
-		MainTable.Model = LogFilter;
 
 		MainTable.ShowAll ();
 
@@ -124,8 +125,8 @@ public partial class MainWindow: Gtk.Window
 
 	protected void onFileOpen (object sender, EventArgs e)
 	{
-		string file_line = null;
 		LogLine log_line = new LogLine ();
+		string[] file_content = new string[]{ };
 
 		FileChooserDialog chooser = new FileChooserDialog(
 			"Select a logfile to view ...",
@@ -137,8 +138,13 @@ public partial class MainWindow: Gtk.Window
 		if (chooser.Run () == (int)ResponseType.Accept) {
 			try {
 				file_load_thread.Abort ();
-			} catch {
 			}
+			catch {
+				// I see the problem, and I plan to do nothing about it
+			}
+
+			MainTable.Model = EmptyLogStore;
+			LogStore = new Gtk.ListStore (typeof(LogLine));
 
 			// Open the file for reading.
 			this.log_file_name = chooser.Filename.ToString ();
@@ -151,52 +157,53 @@ public partial class MainWindow: Gtk.Window
 			MainWindowStatusBar.Push (1, "Loading file contents...");
 
 			file_load_thread = new Thread (() => {
-				System.IO.StreamReader file = new System.IO.StreamReader (this.log_file_name);
+				file_content = System.IO.File.ReadAllLines(this.log_file_name);
 
+				double progress_step = file_content.Length / 100;
 				int i = 0;
-				while ((file_line = file.ReadLine ()) != null) {
+				double current_progress = 0;
+				foreach (string file_line in file_content) {
 					log_line = this.parseLogLine (file_line);
+					LogStore.AppendValues (log_line);
 
-					Gtk.Application.Invoke (delegate {
-						Gdk.Threads.Enter ();
-
-						try {
-							LogStore.AppendValues (log_line);
-						} finally {
-							Gdk.Threads.Leave ();
-						}
-					});
-
-					if (i % 1000 == 0) {
-						Gtk.Application.Invoke (delegate {
-							Gdk.Threads.Enter ();
+					if (i % progress_step == 0) {
+						Gtk.Application.Invoke(delegate {
+							Gdk.Threads.Enter();
 
 							try {
-								progressbar1.Pulse ();
-							} finally {
-								Gdk.Threads.Leave ();
+								current_progress = progressbar1.Fraction;
+								current_progress+= 0.01;
+								if (current_progress > 1.0) {
+									current_progress = 1.0;
+								}
+
+								progressbar1.Fraction = current_progress;
+							}
+							finally {
+								Gdk.Threads.Leave();
 							}
 						});
-						
 					}
 
 					i++;
 				}
 
-				Gtk.Application.Invoke (delegate {
+				MessageFilterCriteria.Text = "";
+
+				Gtk.Application.Invoke(delegate {
 					Gdk.Threads.Enter ();
 					try {
+						MainTable.Model = LogStore;
 						MainWindowStatusBar.Push (1, "File loaded.");
 						progressbar1.Fraction = 0;
 					} finally {
 						Gdk.Threads.Leave ();
 					}
 				});
-
-				file.Close ();
 			});
 
 			file_load_thread.Start ();
+
 		} else {
 			chooser.Destroy ();
 		}
@@ -230,12 +237,18 @@ public partial class MainWindow: Gtk.Window
 
 	protected void onExit (object sender, EventArgs e)
 	{
-		Application.Quit ();
+		try {
+			file_load_thread.Abort();
+		}
+		finally {
+			Application.Quit ();
+		}
 	}
 
 	protected void onFilterToggled (object sender, EventArgs e)
 	{
 		if (FilterPanel.Visible) {
+			MessageFilterCriteria.Text = "";
 			FilterPanel.Visible = false;
 		} else {
 			FilterPanel.Visible = true;
@@ -256,13 +269,10 @@ public partial class MainWindow: Gtk.Window
 			return false;
 	}
 
-	protected void OnMessageFilterChanged (object sender, EventArgs e)
+	protected void OnMessageFilterEntered (object sender, EventArgs e)
 	{
-		LogFilter.Refilter ();
 	}
 
-	protected void OnPreferencesClicked (object sender, EventArgs e)
-	{
-		throw new NotImplementedException ();
-	}
+	protected void OnPreferencesClicked(object sender, EventArgs e)
+	{}
 }
