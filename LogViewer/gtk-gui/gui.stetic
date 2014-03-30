@@ -49,6 +49,7 @@
         <property name="Type">Action</property>
         <property name="Label" translatable="yes" />
         <property name="StockId">gtk-preferences</property>
+        <signal name="Activated" handler="OnPreferencesClicked" />
       </action>
       <action id="findAction">
         <property name="Type">Toggle</property>
@@ -57,6 +58,18 @@
         <property name="DrawAsRadio">False</property>
         <property name="Active">False</property>
         <signal name="Toggled" handler="onFilterToggled" />
+      </action>
+      <action id="ToolsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Tools</property>
+        <property name="ShortLabel" translatable="yes">Tools</property>
+      </action>
+      <action id="preferencesAction1">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Preferences</property>
+        <property name="ShortLabel" translatable="yes">Preferences</property>
+        <property name="StockId">gtk-preferences</property>
+        <signal name="Activated" handler="OnPreferencesClicked" />
       </action>
     </action-group>
     <property name="MemberName" />
@@ -91,6 +104,9 @@
                 <node type="Menuitem" action="openAction" />
                 <node type="Separator" />
                 <node type="Menuitem" action="quitAction" />
+              </node>
+              <node type="Menu" action="ToolsAction">
+                <node type="Menuitem" action="preferencesAction1" />
               </node>
             </node>
           </widget>

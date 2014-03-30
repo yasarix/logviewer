@@ -12,6 +12,8 @@ public partial class MainWindow
 	private global::Gtk.Action openAction1;
 	private global::Gtk.Action preferencesAction;
 	private global::Gtk.ToggleAction findAction;
+	private global::Gtk.Action ToolsAction;
+	private global::Gtk.Action preferencesAction1;
 	private global::Gtk.VBox MainBox;
 	private global::Gtk.Fixed FixedPane;
 	private global::Gtk.MenuBar MenuBar;
@@ -55,6 +57,12 @@ public partial class MainWindow
 		w1.Add (this.preferencesAction, null);
 		this.findAction = new global::Gtk.ToggleAction ("findAction", null, null, "gtk-find");
 		w1.Add (this.findAction, null);
+		this.ToolsAction = new global::Gtk.Action ("ToolsAction", global::Mono.Unix.Catalog.GetString ("Tools"), null, null);
+		this.ToolsAction.ShortLabel = global::Mono.Unix.Catalog.GetString ("Tools");
+		w1.Add (this.ToolsAction, null);
+		this.preferencesAction1 = new global::Gtk.Action ("preferencesAction1", global::Mono.Unix.Catalog.GetString ("Preferences"), null, "gtk-preferences");
+		this.preferencesAction1.ShortLabel = global::Mono.Unix.Catalog.GetString ("Preferences");
+		w1.Add (this.preferencesAction1, null);
 		this.UIManager.InsertActionGroup (w1, 0);
 		this.AddAccelGroup (this.UIManager.AccelGroup);
 		this.Name = "MainWindow";
@@ -78,7 +86,7 @@ public partial class MainWindow
 		w2.Expand = false;
 		w2.Fill = false;
 		// Container child MainBox.Gtk.Box+BoxChild
-		this.UIManager.AddUiFromString ("<ui><menubar name='MenuBar'><menu name='FileAction1' action='FileAction1'><menuitem name='openAction' action='openAction'/><separator/><menuitem name='quitAction' action='quitAction'/></menu></menubar></ui>");
+		this.UIManager.AddUiFromString ("<ui><menubar name='MenuBar'><menu name='FileAction1' action='FileAction1'><menuitem name='openAction' action='openAction'/><separator/><menuitem name='quitAction' action='quitAction'/></menu><menu name='ToolsAction' action='ToolsAction'><menuitem name='preferencesAction1' action='preferencesAction1'/></menu></menubar></ui>");
 		this.MenuBar = ((global::Gtk.MenuBar)(this.UIManager.GetWidget ("/MenuBar")));
 		this.MenuBar.Name = "MenuBar";
 		this.MainBox.Add (this.MenuBar);
@@ -101,12 +109,12 @@ public partial class MainWindow
 		this.FilterPanel.Name = "FilterPanel";
 		this.FilterPanel.Spacing = 6;
 		// Container child FilterPanel.Gtk.Box+BoxChild
-		this.MessageFilterLabel = new global::Gtk.Label ();
-		this.MessageFilterLabel.Name = "MessageFilterLable";
-		this.MessageFilterLabel.Xpad = 5;
-		this.MessageFilterLabel.LabelProp = global::Mono.Unix.Catalog.GetString ("Search Message");
-		this.FilterPanel.Add (this.MessageFilterLabel);
-		global::Gtk.Box.BoxChild w5 = ((global::Gtk.Box.BoxChild)(this.FilterPanel [this.MessageFilterLabel]));
+		this.MessageFilterLable = new global::Gtk.Label ();
+		this.MessageFilterLable.Name = "MessageFilterLable";
+		this.MessageFilterLable.Xpad = 5;
+		this.MessageFilterLable.LabelProp = global::Mono.Unix.Catalog.GetString ("Search Message");
+		this.FilterPanel.Add (this.MessageFilterLable);
+		global::Gtk.Box.BoxChild w5 = ((global::Gtk.Box.BoxChild)(this.FilterPanel [this.MessageFilterLable]));
 		w5.Position = 0;
 		w5.Expand = false;
 		w5.Fill = false;
@@ -194,7 +202,9 @@ public partial class MainWindow
 		this.openAction.Activated += new global::System.EventHandler (this.onFileOpen);
 		this.quitAction.Activated += new global::System.EventHandler (this.onExit);
 		this.openAction1.Activated += new global::System.EventHandler (this.onFileOpen);
+		this.preferencesAction.Activated += new global::System.EventHandler (this.OnPreferencesClicked);
 		this.findAction.Toggled += new global::System.EventHandler (this.onFilterToggled);
+		this.preferencesAction1.Activated += new global::System.EventHandler (this.OnPreferencesClicked);
 		this.MessageFilterCriteria.Changed += new global::System.EventHandler (this.OnMessageFilterChanged);
 		this.MainTable.CursorChanged += new global::System.EventHandler (this.onRowSelect);
 	}

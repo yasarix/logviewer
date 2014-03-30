@@ -246,7 +246,6 @@ public partial class MainWindow: Gtk.Window
 	private bool filterLogEntries (Gtk.TreeModel model, Gtk.TreeIter iter)
 	{
 		LogLine line = (LogLine) model.GetValue (iter, 0);
-		//string process = model.GetValue (iter, 0).ToString ();
 
 		if (MessageFilterCriteria.Text == "")
 			return true;
@@ -260,5 +259,10 @@ public partial class MainWindow: Gtk.Window
 	protected void OnMessageFilterChanged (object sender, EventArgs e)
 	{
 		LogFilter.Refilter ();
+	}
+
+	protected void OnPreferencesClicked (object sender, EventArgs e)
+	{
+		throw new NotImplementedException ();
 	}
 }
