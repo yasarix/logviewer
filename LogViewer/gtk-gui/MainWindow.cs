@@ -101,6 +101,7 @@ public partial class MainWindow
 		this.MainToolBar = ((global::Gtk.Toolbar)(this.UIManager.GetWidget ("/MainToolBar")));
 		this.MainToolBar.Name = "MainToolBar";
 		this.MainToolBar.ShowArrow = false;
+		this.MainToolBar.ToolbarStyle = ((global::Gtk.ToolbarStyle)(0));
 		this.MainBox.Add (this.MainToolBar);
 		global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.MainBox [this.MainToolBar]));
 		w4.Position = 2;
@@ -220,6 +221,7 @@ public partial class MainWindow
 		if ((this.Child != null)) {
 			this.Child.ShowAll ();
 		}
+		this.SearchButton.HasDefault = true;
 		this.FilterPanel.Hide ();
 		this.Show ();
 		this.DeleteEvent += new global::Gtk.DeleteEventHandler (this.OnDeleteEvent);
